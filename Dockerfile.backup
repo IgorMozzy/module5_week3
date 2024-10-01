@@ -1,0 +1,9 @@
+FROM postgres:13
+
+RUN apt-get update && apt-get install -y cron
+
+COPY backup.sh /usr/local/bin/backup.sh
+COPY restore.sh /usr/local/bin/restore.sh
+RUN chmod +x /usr/local/bin/backup.sh /usr/local/bin/restore.sh
+
+CMD service cron start && docker-entrypoint.sh postgres
