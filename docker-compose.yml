@@ -1,0 +1,50 @@
+services:
+  db:
+    build:
+      dockerfile: Dockerfile.backup
+    environment:
+      POSTGRES_USER: django_user
+      POSTGRES_PASSWORD: django_password
+      POSTGRES_DB: django_db
+      PGPASSWORD: django_password
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - app_network
+
+  web:
+    build: .
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - ./backups:/backups
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://django_user:django_password@db:5432/django_db
+    networks:
+      - app_network
+
+  backup:
+    image: offen/docker-volume-backup:v2
+    volumes:
+      - pg_data:/backup/my-app-backup:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./backups:/archive
+    networks:
+      - app_network
+    depends_on:
+      - db
+    environment:
+      BACKUP_FILENAME: backup-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_LATEST_SYMLINK: backup-latest.tar.gz
+      BACKUP_CRON_EXPRESSION: "*/1 * * * *"
+
+volumes:
+  pg_data:
+
+networks:
+  app_network:

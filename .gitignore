@@ -1,5 +1,6 @@
 .idea/
 .venv/
+backups/
 .env
 db.sqlite3
 /temp*
